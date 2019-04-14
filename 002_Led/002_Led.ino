@@ -5,9 +5,9 @@
   void loop() {
     for (int i = 0; i < 2; i++) {
       digitalWrite(ledpin,HIGH);  // set the LED on digital pin 10 on. 
-      delay(100);
+      delay(3000);
       digitalWrite(ledpin,LOW);   // set the LED on digital pin 10 off.
-      delay(100);
+      delay(3000);
     }
     delay(1000);
   }
