@@ -7,15 +7,7 @@ The circuit:
  SDA: UNO SDA
  
  This example code is in the public domain.
-
 */
-
-  int a1 = 7;
-  int l1 = 8;
-  int r1 = 9;
-  int l2 = 10;
-  int r2 = 11;
-  int a2 = 12;
 
 // Registers for ADXL345
 #define ADXL345_ADDRESS (0xA6 >> 1)  // address for device is 8 bit but shift to the
@@ -61,7 +53,11 @@ void i2c_read(int address, byte reg, int count, byte* data) {
   Wire.endTransmission();
 }
 
+byte bytes[6];
+
 void init_adxl345() {
+  memset(bytes,0,6);
+
   byte data = 0;
 
   i2c_write(ADXL345_ADDRESS, 0x31, 0x0B);   // 13-bit mode  +_ 16g
@@ -80,8 +76,6 @@ void init_adxl345() {
 }
 
 void read_adxl345() {
-  byte bytes[6];
-  memset(bytes,0,6);
 
   // Read 6 bytes from the ADXL345
   i2c_read(ADXL345_ADDRESS, ADXL345_REGISTER_XLSB, 6, bytes);
@@ -91,65 +85,66 @@ void read_adxl345() {
   }
 }
 
-  void setup() {
-    pinMode(a1, OUTPUT);
-    pinMode(l1, OUTPUT);
-    pinMode(r1, OUTPUT);
-    pinMode(a2, OUTPUT);
-    pinMode(l2, OUTPUT);
-    pinMode(r2, OUTPUT);
+int a1 = 6;
+int l1 = 7;
+int r1 = 8;
+int l2 = 9;
+int r2 = 10;
+int a2 = 11;
 
-    Wire.begin();
-    for(int i=0; i<3; ++i) {
-      accelerometer_data[i] = 0;
-    }
-    init_adxl345();
+void setup() {
+  pinMode(a1, OUTPUT);
+  pinMode(l1, OUTPUT);
+  pinMode(r1, OUTPUT);
+  pinMode(a2, OUTPUT);
+  pinMode(l2, OUTPUT);
+  pinMode(r2, OUTPUT);
 
-    Serial.begin(9600);
+  Wire.begin();
+  for(int i=0; i<3; ++i) {
+    accelerometer_data[i] = 0;
   }
+  init_adxl345();
 
-  double theta = 0.0;
-  double thetaDelta = 0.0;
-  double prevTheta = 0.0;
-  double prevThetaDelta = 0.0;
+//  Serial.begin(9600);
+}
 
-  int trottle = 0;
+double theta = 0.0;
+double thetaDelta = 0.0;
+double prevTheta = 0.0;
+double prevThetaDelta = 0.0;
 
-  void loop() {
-    read_adxl345();
-//    Serial.print("ACCEL: ");
-//    Serial.print(float(accelerometer_data[0])*3.9/1000);//3.9mg/LSB scale factor in 13-bit mode
-//    Serial.print("\t");
-//    Serial.print(float(accelerometer_data[1])*3.9/1000);
-//    Serial.print("\t");
-//    Serial.print(float(accelerometer_data[2])*3.9/1000);
-//    Serial.print("\n");
+int trottle = 0;
 
-    theta = float(accelerometer_data[2]) * 3.9 / 1000;
-    thetaDelta = theta - prevTheta;
+void loop() {
+  read_adxl345();
 
-    if (theta > 0.0) {
-      trottle = 255 * theta;      
-      digitalWrite(l1, HIGH);
-      digitalWrite(r1, LOW);
-      digitalWrite(l2, HIGH);
-      digitalWrite(r2, LOW);
-    } else {
-      trottle = -255 * theta;
-      digitalWrite(l1, LOW);
-      digitalWrite(r1, HIGH);
-      digitalWrite(l2, LOW);
-      digitalWrite(r2, HIGH);
-    }
+  theta = float(accelerometer_data[2]) * 3.9 / 1000;
+  thetaDelta = theta - prevTheta;
+  trottle = 392 * theta;
+
+//  Serial.print(theta);
+//  Serial.print(", ");
+//  Serial.print(trottle);
+//  Serial.print("\n");
+
+  if (theta > 0.0) {
     analogWrite(a1, trottle);
     analogWrite(a2, trottle);
-
-    Serial.print(theta);
-    Serial.print(", ");
-    Serial.print(trottle);
-    Serial.print("\n");
-
-    prevTheta = theta;
-    prevThetaDelta = thetaDelta;
-    delay(100);
+    digitalWrite(l1, HIGH);
+    digitalWrite(r1, LOW);
+    digitalWrite(l2, HIGH);
+    digitalWrite(r2, LOW);
+  } else {
+    analogWrite(a1, -trottle);
+    analogWrite(a2, -trottle);
+    digitalWrite(l1, LOW);
+    digitalWrite(r1, HIGH);
+    digitalWrite(l2, LOW);
+    digitalWrite(r2, HIGH);
   }
+
+  prevTheta = theta;
+  prevThetaDelta = thetaDelta;
+  delay(10);
+}
